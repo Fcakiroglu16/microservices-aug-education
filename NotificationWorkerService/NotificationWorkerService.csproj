@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-NotificationWorkerService-fc4e8a3d-9d0a-4c25-ba69-e0f37aa3e165</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.5"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj" />
+    </ItemGroup>
+</Project>

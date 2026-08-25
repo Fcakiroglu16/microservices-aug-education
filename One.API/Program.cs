@@ -9,25 +9,32 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddSingleton<IConnection>(_ =>
+{
+    var connectionFactory = new ConnectionFactory
+    {
+        Uri = new Uri("amqps://smahhmfk:U3QKCkbQrbXDwrE4ALgfaOua2XC8OVN8@leopard.lmq.cloudamqp.com/smahhmfk")
+    };
+
+    return connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult();
+});
 
 var app = builder.Build();
 
-app.MapPost("/api/users", async (CreateUserRequest request,CancellationToken cancellationToken) =>
+app.MapPost("/api/users", async (CreateUserRequest request, IConnection connection, CancellationToken cancellationToken) =>
 {
     // user created for db
     var userId = 1000;
     var userCreatedEvent = new UserCreatedEvent(userId, request.UserName, request.Email);
 
+    
+
     var userCreatedEventAsJson = JsonSerializer.Serialize(userCreatedEvent);
     
     var userCreatedEventAsJsonBytes = Encoding.UTF8.GetBytes(userCreatedEventAsJson);
 
-    var connectionFactory= new ConnectionFactory() { Uri = new Uri("amqp://localhost") };
-
-    await using var connection =await connectionFactory.CreateConnectionAsync();
-
     const string exchangeName = "one.api-user.created-exchange";
-    await PublishWithoutAckAsync(connection, exchangeName, userCreatedEventAsJsonBytes);
+   // await PublishWithoutAckAsync(connection, exchangeName, userCreatedEventAsJsonBytes);
     await PublishWithAckAsync(connection, exchangeName, userCreatedEventAsJsonBytes, app.Logger, cancellationToken);
     
     
@@ -65,13 +72,13 @@ static async Task PublishWithAckAsync(
     var channel = await connection.CreateChannelAsync(new CreateChannelOptions(true, true));
     const int maxPublishAttempts = 3;
     var attempt = 0;
-
+    await channel.ExchangeDeclareAsync(exchange: exchangeName, type: ExchangeType.Fanout, durable: true);
     while (attempt < maxPublishAttempts)
     {
         attempt++;
         try
         {
-            await channel.BasicPublishAsync(exchangeName, string.Empty, true, eventBody);
+            await channel.BasicPublishAsync(exchangeName, string.Empty, false, eventBody);
             break;
         }
         catch (Exception ex)

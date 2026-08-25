@@ -1,6 +1,16 @@
-@One.API_HostAddress = http://localhost:5263
+@One_API_HostAddress = http://localhost:5263
 
-GET {{One.API_HostAddress}}/weatherforecast/
+GET {{One_API_HostAddress}}/weatherforecast/
 Accept: application/json
+
+###
+
+POST {{One_API_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "userName": "test-user",
+  "email": "test-user@example.com"
+}
 
 ###

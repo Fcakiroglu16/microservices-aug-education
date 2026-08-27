@@ -4,3 +4,8 @@ GET {{Two.API_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+GET {{Two.API_HostAddress}}/api/products
+Accept: application/json
+
+###

@@ -1,4 +1,5 @@
 using RabbitMQ.Client;
+using SharedLibrary;
 using Two.API.Consumers;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +24,18 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment()) app.MapOpenApi();
 
 app.UseHttpsRedirection();
+
+app.MapGet("/api/products", () =>
+{
+    var products = new List<ProductDto>
+    {
+        new(1, "Kalem", 25.5m),
+        new(2, "Defter", 60m),
+        new(3, "Silgi", 12.75m)
+    };
+
+    return Results.Ok(products);
+});
 
 
 app.Run();

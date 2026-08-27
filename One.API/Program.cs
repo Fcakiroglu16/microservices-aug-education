@@ -1,7 +1,10 @@
+using System.Net;
 using System.Text;
 using System.Text.Json;
+using One.API.Clients;
 using RabbitMQ.Client;
 using SharedLibrary;
+using SharedLibrary.Resilience;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,12 +21,43 @@ builder.Services.AddSingleton<IConnection>(_ =>
     return connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult();
 });
 
+// HttpClient'i DI Container'a ekliyoruz (typed client => TwoApiClient'in ctor'una inject edilir)
+// Sira onemli: once eklenen disda kalir.
+// AddFallbackPolicy         => tum policy'ler tukenirse bos urun listesi doner (en disda)
+// AddConcurrencyLimitPolicy => ayni anda en fazla 10 istek
+// AddRetryPolicy            => 3 kez retry: 2sn, 4sn, 8sn
+// AddCircuitBreakerPolicy   => 10 sn'lik periyotta %50 hata => devre 30 sn acik kalir
+// AddTimeoutPolicy          => her deneme icin 10 sn timeout (en icte, HttpClient.Timeout'u da yonetir)
+builder.Services.AddHttpClient<TwoApiClient>(client =>
+        client.BaseAddress = new Uri(builder.Configuration["TwoApi:BaseAddress"]!))
+    .AddFallbackPolicy(() => new HttpResponseMessage(HttpStatusCode.OK)
+    {
+        Content = JsonContent.Create(Array.Empty<ProductDto>())
+    })
+    .AddConcurrencyLimitPolicy()
+    .AddRetryPolicy()
+    .AddCircuitBreakerPolicy()
+    .AddTimeoutPolicy();
+
 var app = builder.Build();
 
 app.MapPost("/api/users",
     async (CreateUserRequest request, IConnection connection, CancellationToken cancellationToken) =>
     {
-        // user created for db
+        
+        //Outbox Pattern
+        // 1. Aşama OutboxTable(Id,EventType,EventAsJson,IsPublished) - 1,UserCreatedEvent,{userId:1,...},false
+        
+        // begin transaction
+        // user save
+        // outboxRow save
+        
+        // end transaction
+        
+        
+        
+        
+        
         var userId = 1000;
         var userCreatedEvent = new UserCreatedEvent(userId, request.UserName, request.Email);
 
@@ -38,6 +72,15 @@ app.MapPost("/api/users",
 
 
         return Results.Ok();
+    });
+
+
+app.MapGet("/api/products-from-two",
+    async (TwoApiClient twoApiClient, CancellationToken cancellationToken) =>
+    {
+        var products = await twoApiClient.GetProductsAsync(cancellationToken);
+
+        return Results.Ok(products);
     });
 
 
@@ -72,7 +115,17 @@ static async Task PublishWithAckAsync(
         attempt++;
         try
         {
-            await channel.BasicPublishAsync(exchangeName, string.Empty, false, eventBody);
+            
+            
+            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+            
+            cancellationTokenSource.CancelAfter(3000);
+            
+            await channel.BasicPublishAsync(exchangeName, string.Empty, false, eventBody,cancellationTokenSource.Token);
+            
+            
+            
+            
             break;
         }
         catch (Exception ex)

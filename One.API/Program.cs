@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using RabbitMQ.Client;
@@ -21,36 +20,31 @@ builder.Services.AddSingleton<IConnection>(_ =>
 
 var app = builder.Build();
 
-app.MapPost("/api/users", async (CreateUserRequest request, IConnection connection, CancellationToken cancellationToken) =>
-{
-    // user created for db
-    var userId = 1000;
-    var userCreatedEvent = new UserCreatedEvent(userId, request.UserName, request.Email);
+app.MapPost("/api/users",
+    async (CreateUserRequest request, IConnection connection, CancellationToken cancellationToken) =>
+    {
+        // user created for db
+        var userId = 1000;
+        var userCreatedEvent = new UserCreatedEvent(userId, request.UserName, request.Email);
 
-    
 
-    var userCreatedEventAsJson = JsonSerializer.Serialize(userCreatedEvent);
-    
-    var userCreatedEventAsJsonBytes = Encoding.UTF8.GetBytes(userCreatedEventAsJson);
+        var userCreatedEventAsJson = JsonSerializer.Serialize(userCreatedEvent);
 
-    const string exchangeName = "one.api-user.created-exchange";
-   // await PublishWithoutAckAsync(connection, exchangeName, userCreatedEventAsJsonBytes);
-    await PublishWithAckAsync(connection, exchangeName, userCreatedEventAsJsonBytes, app.Logger, cancellationToken);
-    
-    
-    return Results.Ok();
-});
+        var userCreatedEventAsJsonBytes = Encoding.UTF8.GetBytes(userCreatedEventAsJson);
 
+        const string exchangeName = "one.api-user.created-exchange";
+        // await PublishWithoutAckAsync(connection, exchangeName, userCreatedEventAsJsonBytes);
+        await PublishWithAckAsync(connection, exchangeName, userCreatedEventAsJsonBytes, app.Logger, cancellationToken);
+
+
+        return Results.Ok();
+    });
 
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+if (app.Environment.IsDevelopment()) app.MapOpenApi();
 
 app.UseHttpsRedirection();
-
 
 
 app.Run();
@@ -58,7 +52,7 @@ app.Run();
 static async Task PublishWithoutAckAsync(IConnection connection, string exchangeName, byte[] eventBody)
 {
     var channel = await connection.CreateChannelAsync();
-    await channel.ExchangeDeclareAsync(exchange: exchangeName, type: ExchangeType.Fanout, durable: true);
+    await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Fanout, true);
     await channel.BasicPublishAsync(exchangeName, string.Empty, true, eventBody);
 }
 
@@ -72,7 +66,7 @@ static async Task PublishWithAckAsync(
     var channel = await connection.CreateChannelAsync(new CreateChannelOptions(true, true));
     const int maxPublishAttempts = 3;
     var attempt = 0;
-    await channel.ExchangeDeclareAsync(exchange: exchangeName, type: ExchangeType.Fanout, durable: true);
+    await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Fanout, true);
     while (attempt < maxPublishAttempts)
     {
         attempt++;
@@ -83,10 +77,7 @@ static async Task PublishWithAckAsync(
         }
         catch (Exception ex)
         {
-            if (attempt >= maxPublishAttempts)
-            {
-                throw;
-            }
+            if (attempt >= maxPublishAttempts) throw;
 
             logger.LogWarning(ex,
                 "Publishing user created event failed on attempt {Attempt}/{MaxAttempts}. Retrying...",

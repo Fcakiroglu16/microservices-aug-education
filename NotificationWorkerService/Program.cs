@@ -1,4 +1,3 @@
-using NotificationWorkerService;
 using NotificationWorkerService.Consumers;
 using RabbitMQ.Client;
 

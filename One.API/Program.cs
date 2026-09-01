@@ -23,21 +23,36 @@ builder.Services.AddSingleton<IConnection>(_ =>
 
 // HttpClient'i DI Container'a ekliyoruz (typed client => TwoApiClient'in ctor'una inject edilir)
 // Sira onemli: once eklenen disda kalir.
+//
+// DIKKAT: Asagidaki degerler DERS/DEMO icindir; Postman'den elle tiklayarak her policy'nin
+// tetiklenebilmesi icin bilerek dusuk tutulmustur. Production degerleri icin her policy
+// dosyasindaki Default* sabitlerine bakin (orn. minimumThroughput: 10, breakDuration: 30 sn).
+//
 // AddFallbackPolicy         => tum policy'ler tukenirse bos urun listesi doner (en disda)
-// AddConcurrencyLimitPolicy => ayni anda en fazla 10 istek
-// AddRetryPolicy            => 3 kez retry: 2sn, 4sn, 8sn
-// AddCircuitBreakerPolicy   => 10 sn'lik periyotta %50 hata => devre 30 sn acik kalir
-// AddTimeoutPolicy          => her deneme icin 10 sn timeout (en icte, HttpClient.Timeout'u da yonetir)
+// AddConcurrencyLimitPolicy => ayni anda en fazla 3 istek (Postman Runner ile 4+ paralel istek atinca reddedilir)
+// AddRetryPolicy            => 3 kez retry: 1sn, 2sn, 4sn (varsayilan 2/4/8sn Postman'de cok uzun bekletiyor)
+// AddHedgingPolicy          => 500 ms icinde cevap gelmezse paralel deneme acar (orijinal + 2 deneme)
+//                              (Two.API /api/products olculen gecikme: p50 0,3 ms - p99 0,5 ms => 500 ms ~1000x p99,
+//                               saglikli trafikte hic tetiklenmez)
+// AddCircuitBreakerPolicy   => 30 sn'lik periyotta 3 istekten %50'si hatali => devre 15 sn acik kalir
+//                              (varsayilan minimumThroughput: 10 + samplingDuration: 10 sn => en az 1 rps gerekir,
+//                               elle tiklayarak o trafige ulasilamadigi icin devre hic acilmazdi)
+// AddTimeoutPolicy          => her deneme icin 3 sn timeout (en icte, HttpClient.Timeout'u da yonetir)
 builder.Services.AddHttpClient<TwoApiClient>(client =>
         client.BaseAddress = new Uri(builder.Configuration["TwoApi:BaseAddress"]!))
     .AddFallbackPolicy(() => new HttpResponseMessage(HttpStatusCode.OK)
     {
         Content = JsonContent.Create(Array.Empty<ProductDto>())
     })
-    .AddConcurrencyLimitPolicy()
-    .AddRetryPolicy()
-    .AddCircuitBreakerPolicy()
-    .AddTimeoutPolicy();
+    .AddConcurrencyLimitPolicy(permitLimit: 3)
+    .AddRetryPolicy(maxRetryAttempts: 3, delay: TimeSpan.FromSeconds(1))
+    .AddHedgingPolicy(delay: TimeSpan.FromMilliseconds(500))
+    .AddCircuitBreakerPolicy(
+        failureRatio: 0.5,
+        samplingDuration: TimeSpan.FromSeconds(30),
+        breakDuration: TimeSpan.FromSeconds(15),
+        minimumThroughput: 3)
+    .AddTimeoutPolicy(TimeSpan.FromSeconds(3));
 
 var app = builder.Build();
 

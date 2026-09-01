@@ -32,6 +32,30 @@ public static class HttpClientBuilderExtensions
         return builder;
     }
 
+    // Herhangi bir typed/named HttpClient'a hedging (paralel deneme) policy'sini ekler:
+    // services.AddHttpClient<TwoApiClient>(...).AddRetryPolicy().AddHedgingPolicy();
+    // NOT: Retry'in ICINDE, circuit breaker ve timeout'un DISINDA olmalidir.
+    // Boylece her hedge denemesi kendi timeout'una ve circuit breaker kontrolune tabi olur;
+    // tum paralel denemeler basarisiz olursa retry backoff ile butun grubu yeniden dener.
+    // NOT: Yalnizca idempotent istekler icin kullanin (bkz. HedgingPolicy).
+    public static IHttpClientBuilder AddHedgingPolicy(
+        this IHttpClientBuilder builder,
+        int maxHedgedAttempts = HedgingPolicy.DefaultMaxHedgedAttempts,
+        TimeSpan? delay = null)
+    {
+        builder.AddResilienceHandler($"{builder.Name}-hedging", (pipeline, context) =>
+        {
+            var logger = context.ServiceProvider
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger($"Hedging.{builder.Name}");
+
+            pipeline.AddHedging(HedgingPolicy.CreateHttpHedgingStrategy(
+                builder.Name, logger, maxHedgedAttempts, delay));
+        });
+
+        return builder;
+    }
+
     // Herhangi bir typed/named HttpClient'a ortak circuit breaker policy'sini ekler:
     // services.AddHttpClient<TwoApiClient>(...).AddRetryPolicy().AddCircuitBreakerPolicy();
     // NOT: Once eklenen handler disda kalir => retry (dis) -> circuit breaker (ic) -> HTTP istegi.

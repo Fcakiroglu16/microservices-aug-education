@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using Polly;
-using Polly.Retry;
 
 namespace SharedLibrary.Resilience;
 

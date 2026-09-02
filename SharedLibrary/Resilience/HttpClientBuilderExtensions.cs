@@ -1,11 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Polly;
-using Polly.CircuitBreaker;
-using Polly.Fallback;
-using Polly.RateLimiting;
-using Polly.Timeout;
-using Polly.Retry;
 
 namespace SharedLibrary.Resilience;
 
@@ -32,12 +27,7 @@ public static class HttpClientBuilderExtensions
         return builder;
     }
 
-    // Herhangi bir typed/named HttpClient'a hedging (paralel deneme) policy'sini ekler:
-    // services.AddHttpClient<TwoApiClient>(...).AddRetryPolicy().AddHedgingPolicy();
-    // NOT: Retry'in ICINDE, circuit breaker ve timeout'un DISINDA olmalidir.
-    // Boylece her hedge denemesi kendi timeout'una ve circuit breaker kontrolune tabi olur;
-    // tum paralel denemeler basarisiz olursa retry backoff ile butun grubu yeniden dener.
-    // NOT: Yalnizca idempotent istekler icin kullanin (bkz. HedgingPolicy).
+
     public static IHttpClientBuilder AddHedgingPolicy(
         this IHttpClientBuilder builder,
         int maxHedgedAttempts = HedgingPolicy.DefaultMaxHedgedAttempts,
@@ -56,9 +46,7 @@ public static class HttpClientBuilderExtensions
         return builder;
     }
 
-    // Herhangi bir typed/named HttpClient'a ortak circuit breaker policy'sini ekler:
-    // services.AddHttpClient<TwoApiClient>(...).AddRetryPolicy().AddCircuitBreakerPolicy();
-    // NOT: Once eklenen handler disda kalir => retry (dis) -> circuit breaker (ic) -> HTTP istegi.
+
     public static IHttpClientBuilder AddCircuitBreakerPolicy(
         this IHttpClientBuilder builder,
         double failureRatio = CircuitBreakerPolicy.DefaultFailureRatio,
@@ -79,10 +67,6 @@ public static class HttpClientBuilderExtensions
         return builder;
     }
 
-    // Herhangi bir typed/named HttpClient'a eszamanlilik limiti ekler:
-    // services.AddHttpClient<TwoApiClient>(...).AddConcurrencyLimitPolicy();
-    // NOT: En disdaki handler olmasi icin diger policy'lerden ONCE eklenmelidir.
-    // Bir istek, tum retry denemeleri boyunca tek bir permit tutar.
     public static IHttpClientBuilder AddConcurrencyLimitPolicy(
         this IHttpClientBuilder builder,
         int permitLimit = ConcurrencyLimitPolicy.DefaultPermitLimit,
@@ -101,20 +85,11 @@ public static class HttpClientBuilderExtensions
         return builder;
     }
 
-    // Herhangi bir typed/named HttpClient'a timeout policy'sini ekler:
-    // services.AddHttpClient<TwoApiClient>(...).AddRetryPolicy().AddTimeoutPolicy();
-    // NOT: En ICTEKI handler olmasi icin diger policy'lerden SONRA eklenmelidir.
-    // Boylece timeout her deneme icin ayri ayri isler ve dolan sure retry'i tetikler.
+
     public static IHttpClientBuilder AddTimeoutPolicy(
         this IHttpClientBuilder builder,
         TimeSpan? timeout = null)
     {
-        // HttpClient'in kendi timeout'u (varsayilan 100 sn) devre disi birakilir.
-        // Aksi halde iki ayri timeout katmani olur ve pipeline bitmeden HttpClient
-        // TaskCanceledException firlatarak retry'lari yarida kesebilir.
-        // Toplam sure zaten sinirlidir: (retry sayisi + 1) x timeout + retry beklemeleri.
-        builder.ConfigureHttpClient(client => client.Timeout = Timeout.InfiniteTimeSpan);
-
         builder.AddResilienceHandler($"{builder.Name}-timeout", (pipeline, context) =>
         {
             var logger = context.ServiceProvider
@@ -127,10 +102,6 @@ public static class HttpClientBuilderExtensions
         return builder;
     }
 
-    // Herhangi bir typed/named HttpClient'a fallback policy'sini ekler:
-    // services.AddHttpClient<TwoApiClient>(...).AddFallbackPolicy(() => new HttpResponseMessage(HttpStatusCode.OK) { ... });
-    // NOT: En DISTAKI handler olmasi icin diger policy'lerden ONCE eklenmelidir.
-    // Boylece retry tukenmesi, acik devre, timeout ve limit reddi dahil her hata fallback'e duser.
     public static IHttpClientBuilder AddFallbackPolicy(
         this IHttpClientBuilder builder,
         Func<HttpResponseMessage> fallbackResponseFactory)

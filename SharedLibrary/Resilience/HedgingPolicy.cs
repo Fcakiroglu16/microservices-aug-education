@@ -78,7 +78,7 @@ public static class HedgingPolicy
 
         foreach (var header in request.Headers) clone.Headers.TryAddWithoutValidation(header.Key, header.Value);
 
-        foreach (var option in (IDictionary<string, object?>)request.Options)
+        foreach (var option in request.Options)
             clone.Options.Set(new HttpRequestOptionsKey<object?>(option.Key), option.Value);
 
         if (request.Content is not null)

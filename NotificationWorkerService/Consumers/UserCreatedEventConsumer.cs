@@ -29,13 +29,6 @@ public class UserCreatedEventConsumer(IConnection connection, ILogger<UserCreate
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        
-        
-        
-        
-        
-        
-        
         // RabbitMQ => Consumer => Push
         // Consumer => Kafka/Redis => pull
         var queueName = "notification-user.created-queue";
@@ -50,28 +43,27 @@ public class UserCreatedEventConsumer(IConnection connection, ILogger<UserCreate
 
         consumer.ReceivedAsync += async (sender, eventArgs) =>
         {
-            
             // Post endoint ( userName,Email )
             // IdempotencyTable ( IdempotencyId,true)
             try
             {
-               // var userCreateEvent = new UserCreatedEvent(1, "ahmet", "ahmet@outlook.com");
+                // var userCreateEvent = new UserCreatedEvent(1, "ahmet", "ahmet@outlook.com");
                 // var IdempotencyId = header["IdempotencyId"];
-                
-                
+
+
                 // if(dbContext.Idempotency.any(e=> e.IdempotencyId==IdempotencyId)
                 //   await _channel!.BasicNackAsync(eventArgs.DeliveryTag, false, false, stoppingToken);
-                
-                
+
+
                 //Idempotency Consumer
                 // Idempotency Table ( EventId,ISPerform)
-                
-                
+
+
                 // inbox table (eventType,eventasJson,IsPerform)
-                
+
                 // save  IdempotencyTable( IdempotencyId,true)
-                
-                
+
+
                 var body = eventArgs.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
 

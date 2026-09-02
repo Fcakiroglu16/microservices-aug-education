@@ -27,6 +27,7 @@ app.UseHttpsRedirection();
 
 app.MapGet("/api/products", () =>
 {
+    throw new Exception("error");
     var products = new List<ProductDto>
     {
         new(1, "Kalem", 25.5m),

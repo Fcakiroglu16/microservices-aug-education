@@ -3,16 +3,10 @@ using Microsoft.Extensions.Logging;
 
 namespace SharedLibrary.Resilience;
 
-// Tum HttpClient'larin ortak kullandigi circuit breaker policy.
-// Varsayilan: 10 saniyelik periyotta isteklerin %50'si basarisiz olursa devre acilir,
-// devre 30 saniye acik kalir (bu sure boyunca istekler servise hic gitmez).
 public static class CircuitBreakerPolicy
 {
     public const double DefaultFailureRatio = 0.5;
-
-    // Devrenin acilmasi icin sampling periyodunda gereken minimum istek sayisi.
-    // Tek tuk hatanin devreyi acmasini engeller (orn. periyottaki tek istek basarisizsa oran %100 olurdu).
-    public const int DefaultMinimumThroughput = 10;
+    public const int DefaultMinimumThroughput = 3;
 
     public static readonly TimeSpan DefaultSamplingDuration = TimeSpan.FromSeconds(10);
 

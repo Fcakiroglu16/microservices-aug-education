@@ -1,16 +1,14 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 USER $APP_UID
 WORKDIR /app
-EXPOSE 8080  
-#http
-
+EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["WebApplication1.csproj", "WebApplication1/"]
+COPY ["WebApplication1/WebApplication1.csproj", "WebApplication1/"]
 RUN dotnet restore "WebApplication1/WebApplication1.csproj"
-COPY . ./WebApplication1/
+COPY . .
 WORKDIR "/src/WebApplication1"
 RUN dotnet build "./WebApplication1.csproj" -c $BUILD_CONFIGURATION -o /app/build
 

@@ -1,6 +1,28 @@
 @WebApplication1_HostAddress = http://localhost:5165
 
-GET {{WebApplication1_HostAddress}}/weatherforecast/
+### Tüm ürünleri getir (WebApplication2'den)
+GET {{WebApplication1_HostAddress}}/api/products
+Accept: application/json
+
+### Id ile ürün getir (WebApplication2'den)
+GET {{WebApplication1_HostAddress}}/api/products/2
+Accept: application/json
+
+### Olmayan ürün — 404 döner
+GET {{WebApplication1_HostAddress}}/api/products/99
+Accept: application/json
+
+### Yeni user ekle
+POST {{WebApplication1_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "name": "Fatih",
+  "email": "f.cakiroglu16@gmail.com"
+}
+
+### Tüm user'ları listele
+GET {{WebApplication1_HostAddress}}/api/users
 Accept: application/json
 
 ###

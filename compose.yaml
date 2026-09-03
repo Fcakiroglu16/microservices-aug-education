@@ -1,0 +1,38 @@
+﻿services:
+  webapplication1:
+    image: webapplication1-image:v1
+    build:
+      context: .
+      dockerfile: WebApplication1/Dockerfile
+    ports:
+      - "5020:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_HTTP_PORTS=8080
+      - Services:WebApplication2=http://webapplication2:8080
+      - ConnectionStrings:SqlServer=Server=sql-server,1433;Database=WebApplication1Db;User Id=sa;Password=Password12*;TrustServerCertificate=True
+
+  webapplication2:
+    image: webapplication2-image:v1
+    build:
+      context: .
+      dockerfile: WebApplication2/Dockerfile
+    ports:
+      - "5030:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_HTTP_PORTS=8080
+  sql-server:
+    image: mcr.microsoft.com/mssql/server:2025-latest
+    container_name: sqlserver2025
+
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Password12*"
+    ports:
+      - "1600:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+
+volumes:
+  sqlserver_data:

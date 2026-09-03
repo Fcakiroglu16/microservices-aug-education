@@ -1,0 +1,17 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.5.3">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AspireUseCliBundle>true</AspireUseCliBundle>
+        <UserSecretsId>703029ee-ea8d-411c-bfa1-0c91fee0ec45</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\WebApplication1\WebApplication1.csproj" />
+      <ProjectReference Include="..\WebApplication2\WebApplication2.csproj" />
+    </ItemGroup>
+
+</Project>

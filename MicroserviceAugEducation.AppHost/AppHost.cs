@@ -1,29 +1,25 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-var redis = builder.AddRedis("redis").WithLifetime(ContainerLifetime.Persistent);
+// Keycloak'un kendi verisini tuttuğu PostgreSQL sunucusu
+var postgres = builder.AddPostgres("postgres")
+    .WithDataVolume()
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithPgAdmin();
+
+var keycloakDb = postgres.AddDatabase("keycloakdb");
 
 
+var keycloak = builder.AddKeycloak("keycloak", 8080)
+    .WaitFor(keycloakDb)
+    .WithEnvironment(context =>
+    {
+        var endpoint = postgres.Resource.PrimaryEndpoint;
 
-var sqlServer = builder.AddContainer("sqlserver", "mcr.microsoft.com/mssql/server")
-    .WithEnvironment("ACCEPT_EULA", "Y")
-    .WithEnvironment("MSSQL_SA_PASSWORD", "YourStrong!Passw0rd")
-    .WithEnvironment("MSSQL_PID", "Developer")
-    .WithEndpoint(port: 1433, targetPort: 1433, name: "sql");
-
-var rabbitmq = builder.AddRabbitMQ("rabbitmq")
-    .WithManagementPlugin();
-
-var webApplication2 = builder.AddProject<Projects.WebApplication2>("webapplication2")
-    .WithReference(rabbitmq)
-    .WaitFor(rabbitmq);
-
-
-builder.AddProject<Projects.WebApplication1>("webapplication1")
-    .WithReference(webApplication2)
-    .WithReference(redis)
-    .WithReference(rabbitmq)
-    .WaitFor(webApplication2)
-    .WaitFor(redis)
-    .WaitFor(rabbitmq);
+        context.EnvironmentVariables["KC_DB"] = "postgres";
+        context.EnvironmentVariables["KC_DB_URL"] = ReferenceExpression.Create(
+            $"jdbc:postgresql://{endpoint.Property(EndpointProperty.Host)}:{endpoint.Property(EndpointProperty.Port)}/{keycloakDb.Resource.DatabaseName}");
+        context.EnvironmentVariables["KC_DB_USERNAME"] = (object?)postgres.Resource.UserNameParameter ?? "postgres";
+        context.EnvironmentVariables["KC_DB_PASSWORD"] = postgres.Resource.PasswordParameter;
+    });
 
 builder.Build().Run();

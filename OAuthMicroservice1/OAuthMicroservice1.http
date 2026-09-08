@@ -1,0 +1,6 @@
+@OAuthMicroservice1_HostAddress = http://localhost:5270
+
+GET {{OAuthMicroservice1_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

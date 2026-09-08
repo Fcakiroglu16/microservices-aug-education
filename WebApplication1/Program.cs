@@ -1,11 +1,18 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using RabbitMQ.Client;
 using Scalar.AspNetCore;
+using StackExchange.Redis;
 using WebApplication1.Data;
 using WebApplication1.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+
+// Aspire integrations: AppHost'taki "redis" ve "rabbitmq" kaynaklarina baglanir
+builder.AddRedisClient("redis");
+builder.AddRabbitMQClient("rabbitmq");
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -94,6 +101,62 @@ app.MapPost("/api/users", async (CreateUserRequest request, AppDbContext dbConte
     })
     .WithName("CreateUser");
 
+// ---- Redis okuma / yazma ----
+
+app.MapPost("/api/cache", async (SetCacheRequest request, IConnectionMultiplexer redis) =>
+    {
+        var db = redis.GetDatabase();
+
+        if (request.TtlSeconds is > 0)
+            await db.StringSetAsync(request.Key, request.Value, TimeSpan.FromSeconds(request.TtlSeconds.Value));
+        else
+            await db.StringSetAsync(request.Key, request.Value);
+
+        return Results.Ok(new { request.Key, request.Value, request.TtlSeconds });
+    })
+    .WithName("SetCacheValue");
+
+app.MapGet("/api/cache/{key}", async (string key, IConnectionMultiplexer redis) =>
+    {
+        var db = redis.GetDatabase();
+        var value = await db.StringGetAsync(key);
+
+        return value.HasValue
+            ? Results.Ok(new { Key = key, Value = value.ToString() })
+            : Results.NotFound(new { Key = key, Message = "Anahtar bulunamadi" });
+    })
+    .WithName("GetCacheValue");
+
+app.MapDelete("/api/cache/{key}", async (string key, IConnectionMultiplexer redis) =>
+    {
+        var db = redis.GetDatabase();
+        var removed = await db.KeyDeleteAsync(key);
+
+        return removed ? Results.NoContent() : Results.NotFound();
+    })
+    .WithName("DeleteCacheValue");
+
+// ---- RabbitMQ: kuyruga mesaj gonder (WebApplication2 dinliyor) ----
+
+app.MapPost("/api/messages", async (SendMessageRequest request, IConnection rabbitConnection) =>
+    {
+        await using var channel = await rabbitConnection.CreateChannelAsync();
+
+        await channel.QueueDeclareAsync(
+            queue: "messages",
+            durable: true,
+            exclusive: false,
+            autoDelete: false);
+
+        var message = new QueueMessage(Guid.NewGuid(), request.Text, DateTime.UtcNow);
+        var body = JsonSerializer.SerializeToUtf8Bytes(message);
+
+        await channel.BasicPublishAsync(exchange: string.Empty, routingKey: "messages", body: body);
+
+        return Results.Accepted(value: message);
+    })
+    .WithName("SendMessageToQueue");
+
 app.Run();
 
 record Product(int Id, string Name, decimal Price, int Stock);
@@ -101,3 +164,9 @@ record Product(int Id, string Name, decimal Price, int Stock);
 record RemoteUser(int Id, string Name, string Email);
 
 record CreateUserRequest(string Name, string Email);
+
+record SetCacheRequest(string Key, string Value, int? TtlSeconds);
+
+record SendMessageRequest(string Text);
+
+record QueueMessage(Guid Id, string Text, DateTime CreatedAtUtc);

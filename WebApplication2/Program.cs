@@ -1,8 +1,15 @@
 using Scalar.AspNetCore;
+using WebApplication2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+
+// Aspire integration: AppHost'taki "rabbitmq" kaynagina baglanir
+builder.AddRabbitMQClient("rabbitmq");
+
+// Kuyruktaki mesajlari dinleyen background service
+builder.Services.AddHostedService<MessageConsumerService>();
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

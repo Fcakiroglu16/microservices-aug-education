@@ -25,4 +25,10 @@
       <ProjectReference Include="..\MicroserviceAugEducation.ServiceDefaults\MicroserviceAugEducation.ServiceDefaults.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
 </Project>

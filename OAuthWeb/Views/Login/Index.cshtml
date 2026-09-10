@@ -1,0 +1,34 @@
+@model OAuthWeb.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+}
+
+<h1>Login (Resource Owner Password Credentials)</h1>
+
+<form asp-controller="Login" asp-action="Index" method="post" class="mb-4">
+    <div class="mb-3">
+        <label asp-for="Username" class="form-label">Kullanıcı Adı</label>
+        <input asp-for="Username" class="form-control" placeholder="ahmet@outlook.com"/>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Password" class="form-label">Parola</label>
+        <input asp-for="Password" type="password" class="form-control"/>
+    </div>
+    <button type="submit" class="btn btn-primary">Giriş Yap</button>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+else if (Model.Names.Any())
+{
+    <div class="alert alert-success">Token başarıyla alındı ve Microservice1'e istek atıldı.</div>
+
+    <ul class="list-group">
+        @foreach (var name in Model.Names)
+        {
+            <li class="list-group-item">@name</li>
+        }
+    </ul>
+}

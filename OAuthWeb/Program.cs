@@ -3,6 +3,13 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// Named HttpClient for token requests and for calling Microservice1.
+builder.Services.AddHttpClient("TokenClient");
+builder.Services.AddHttpClient("Microservice1", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Microservice1:BaseUrl"]!);
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

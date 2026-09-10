@@ -1,8 +1,10 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OAuthWeb.Models;
 
 namespace OAuthWeb.Controllers;
+
 
 public class HomeController : Controller
 {

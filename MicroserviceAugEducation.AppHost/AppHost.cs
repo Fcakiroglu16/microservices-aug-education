@@ -1,4 +1,11 @@
+using Projects;
+
 var builder = DistributedApplication.CreateBuilder(args);
+
+
+builder.AddProject<OAuthMicroservice1>("microservice1");
+builder.AddProject<OAuthWeb>("web");
+
 
 // Keycloak'un kendi verisini tuttuğu PostgreSQL sunucusu
 var postgres = builder.AddPostgres("postgres")

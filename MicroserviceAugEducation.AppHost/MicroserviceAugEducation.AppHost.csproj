@@ -16,4 +16,9 @@
       <PackageReference Include="Aspire.Hosting.Redis" Version="13.5.3" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\OAuthMicroservice1\OAuthMicroservice1.csproj" />
+      <ProjectReference Include="..\OAuthWeb\OAuthWeb.csproj" />
+    </ItemGroup>
+
 </Project>

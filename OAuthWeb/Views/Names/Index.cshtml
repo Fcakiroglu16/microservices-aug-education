@@ -1,0 +1,22 @@
+@model OAuthWeb.Models.NamesViewModel
+@{
+    ViewData["Title"] = "Names";
+}
+
+<h1>Microservice1 - /api/names</h1>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+else
+{
+    <div class="alert alert-success">Token başarıyla alındı ve Microservice1'e istek atıldı.</div>
+
+    <ul class="list-group">
+        @foreach (var name in Model.Names)
+        {
+            <li class="list-group-item">@name</li>
+        }
+    </ul>
+}

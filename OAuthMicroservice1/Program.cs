@@ -36,7 +36,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(policy =>
+{
+
+    policy.AddPolicy("CityPolicy", policy =>
+    {
+        policy.AuthenticationSchemes.Add(JwtBearerDefaults.AuthenticationScheme);
+        policy.RequireAuthenticatedUser();
+        policy.RequireClaim("city");
+    });
+});
 
 
 
@@ -59,7 +68,7 @@ app.MapGet("/api/names", () =>
 {
     var names = new List<string> { "Alice", "Bob", "Charlie", "David", "Eve" };
     return Results.Ok(names);
-}).RequireAuthorization();
+}).RequireAuthorization(policyNames: ["CityPolicy"]);
 
 app.Run();
 

@@ -17,8 +17,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\OAuthMicroservice1\OAuthMicroservice1.csproj" />
-      <ProjectReference Include="..\OAuthWeb\OAuthWeb.csproj" />
+      <ProjectReference Include="..\ObservabilityOne.API\ObservabilityOne.API.csproj" />
+      <ProjectReference Include="..\ObservabilityTwo.API\ObservabilityTwo.API.csproj" />
     </ItemGroup>
 
 </Project>

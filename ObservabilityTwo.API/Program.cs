@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using ObservabilityTwo.API;
 
 var builder = WebApplication.CreateBuilder(args);
-
+var applicationName = builder.Environment.ApplicationName;
+ActivitySourceProvider._activitySource = new ActivitySource(applicationName);
 builder.AddServiceDefaults();
 
 // Add services to the container.

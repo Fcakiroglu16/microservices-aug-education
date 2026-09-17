@@ -1,6 +1,11 @@
-@ObservabilityOne.API_HostAddress = http://localhost:5265
+@ObservabilityOne_API_HostAddress = http://localhost:5265
 
-GET {{ObservabilityOne.API_HostAddress}}/weatherforecast/
+GET {{ObservabilityOne_API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+GET {{ObservabilityOne_API_HostAddress}}/api/products
 Accept: application/json
 
 ###

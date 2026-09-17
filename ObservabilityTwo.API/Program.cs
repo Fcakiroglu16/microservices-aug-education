@@ -5,11 +5,13 @@ var builder = WebApplication.CreateBuilder(args);
 var applicationName = builder.Environment.ApplicationName;
 ActivitySourceProvider._activitySource = new ActivitySource(applicationName);
 builder.AddServiceDefaults();
+builder.AddRabbitMQClient("rabbitmq");
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddScoped<ProductService>();
+builder.Services.AddHostedService<UserCreatedEventConsumer>();
 
 var app = builder.Build();
 

@@ -9,3 +9,13 @@ GET {{ObservabilityOne_API_HostAddress}}/api/products
 Accept: application/json
 
 ###
+
+POST {{ObservabilityOne_API_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "name": "Ada Lovelace",
+  "email": "ada@example.com"
+}
+
+###
